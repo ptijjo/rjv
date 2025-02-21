@@ -8,3 +8,5 @@ ValidateEnv();
 const app = new App([new UserRoute(), new AuthRoute()]);
 
 app.listen();
+
+export const socketInstance = app.getScketInstance();

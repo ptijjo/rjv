@@ -1,56 +1,50 @@
 import { PrismaClient } from '@prisma/client';
-import { compare, hash } from 'bcrypt';
-import { sign } from 'jsonwebtoken';
+import { compare } from 'bcrypt';
+import * as jwt from 'jsonwebtoken';
 import { Service } from 'typedi';
-import { SECRET_KEY } from '@config';
-import { CreateUserDto } from '@dtos/users.dto';
-import { HttpException } from '@exceptions/httpException';
-import { DataStoredInToken, TokenData } from '@interfaces/auth.interface';
+import { HttpException } from '@/exceptions/httpException';
 import { User } from '@interfaces/users.interface';
+import { AuthInterface } from '@/interfaces/auth.interface';
+import { EXPIRED_TOKEN, SECRET_KEY } from '@/config';
 
 @Service()
 export class AuthService {
-  public users = new PrismaClient().user;
+  public user = new PrismaClient().user;
 
-  public async signup(userData: CreateUserDto): Promise<User> {
-    const findUser: User = await this.users.findUnique({ where: { email: userData.email } });
-    if (findUser) throw new HttpException(409, `This email ${userData.email} already exists`);
+  public async login(userData: AuthInterface): Promise<string> {
+    const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (regexEmail.test(userData.identifiant)) {
+      const findEmail: User | null = await this.user.findUnique({ where: { email: userData.identifiant } });
+      if (!findEmail) throw new HttpException(409, `Identifiants incorrects !`);
 
-    const hashedPassword = await hash(userData.password, 10);
-    const createUserData: Promise<User> = this.users.create({ data: { ...userData, password: hashedPassword } });
+      const isPasswordMatching: boolean = await compare(userData.password, findEmail.password);
+      if (!isPasswordMatching) throw new HttpException(409, `Identifiants incorrects !`);
 
-    return createUserData;
-  }
+      const payload = {
+        id: findEmail.id,
+        email: findEmail.email,
+        pseudo: findEmail.pseudo,
+        role: findEmail.role,
+        avatar: findEmail.avatar,
+      };
 
-  public async login(userData: CreateUserDto): Promise<{ cookie: string; findUser: User }> {
-    const findUser: User = await this.users.findUnique({ where: { email: userData.email } });
-    if (!findUser) throw new HttpException(409, `This email ${userData.email} was not found`);
+      return jwt.sign(payload, SECRET_KEY as string, { expiresIn: EXPIRED_TOKEN as string });
+    } else {
+      const findPseudo: User = await this.user.findUnique({ where: { pseudo: userData.identifiant } });
+      if (!findPseudo) throw new HttpException(409, `Identifiants incorrects !`);
 
-    const isPasswordMatching: boolean = await compare(userData.password, findUser.password);
-    if (!isPasswordMatching) throw new HttpException(409, "Password is not matching");
+      const isPasswordMatching: boolean = await compare(userData.password, findPseudo.password);
+      if (!isPasswordMatching) throw new HttpException(409, `Identifiants incorrects !`);
 
-    const tokenData = this.createToken(findUser);
-    const cookie = this.createCookie(tokenData);
+      const payload = {
+        id: findPseudo.id,
+        email: findPseudo.email,
+        pseudo: findPseudo.pseudo,
+        role: findPseudo.role,
+        avatar: findPseudo.avatar,
+      };
 
-    return { cookie, findUser };
-  }
-
-  public async logout(userData: User): Promise<User> {
-    const findUser: User = await this.users.findFirst({ where: { email: userData.email, password: userData.password } });
-    if (!findUser) throw new HttpException(409, "User doesn't exist");
-
-    return findUser;
-  }
-
-  public createToken(user: User): TokenData {
-    const dataStoredInToken: DataStoredInToken = { id: user.id };
-    const secretKey: string = SECRET_KEY;
-    const expiresIn: number = 60 * 60;
-
-    return { expiresIn, token: sign(dataStoredInToken, secretKey, { expiresIn }) };
-  }
-
-  public createCookie(tokenData: TokenData): string {
-    return `Authorization=${tokenData.token}; HttpOnly; Max-Age=${tokenData.expiresIn};`;
+      return jwt.sign(payload, SECRET_KEY as string, { expiresIn: EXPIRED_TOKEN as string });
+    }
   }
 }

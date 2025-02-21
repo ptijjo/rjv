@@ -12,25 +12,35 @@ import { NODE_ENV, PORT, LOG_FORMAT, ORIGIN, CREDENTIALS } from '@config';
 import { Routes } from '@interfaces/routes.interface';
 import { ErrorMiddleware } from '@middlewares/error.middleware';
 import { logger, stream } from '@utils/logger';
+import http from 'http';
 
 export class App {
   public app: express.Application;
   public env: string;
   public port: string | number;
+  public server: http.Server;
+  public io: any;
 
   constructor(routes: Routes[]) {
     this.app = express();
     this.env = NODE_ENV || 'development';
-    this.port = PORT || 3000;
+    this.port = PORT || 8585;
+    this.server = http.createServer(this.app);
+    this.io = require('socket.io')(this.server, {
+      cors: {
+        origin: '*',
+      },
+    });
 
     this.initializeMiddlewares();
     this.initializeRoutes(routes);
     this.initializeSwagger();
     this.initializeErrorHandling();
+    this.initializeSocket();
   }
 
   public listen() {
-    this.app.listen(this.port, () => {
+    this.server.listen(this.port, () => {
       logger.info(`=================================`);
       logger.info(`======= ENV: ${this.env} =======`);
       logger.info(`🚀 App listening on the port ${this.port}`);
@@ -57,6 +67,20 @@ export class App {
     routes.forEach(route => {
       this.app.use('/', route.router);
     });
+  }
+
+  private initializeSocket() {
+    this.io.on('connection', socket => {
+      console.log("Un utilisateur s'est connecté");
+
+      socket.on('disconnect', () => {
+        console.log("Un utilisateur s'est déconnecté");
+      });
+    });
+  }
+
+  public getScketInstance() {
+    return this.io;
   }
 
   private initializeSwagger() {

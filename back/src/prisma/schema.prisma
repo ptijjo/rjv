@@ -10,8 +10,122 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum Role {
+  user
+  modo
+  admin
+}
+
+enum NotificationType {
+  like
+  commentaire
+}
+
 model User {
-  id       Int    @id @default(autoincrement())
-  email    String @unique
-  password String
+  id             String    @id @default(cuid())
+  email          String    @unique
+  password       String?
+  googleId       String?   @unique
+  pseudo         String    @unique
+  avatar         String    @default("https://vibz.s3.eu-central-1.amazonaws.com/logo/photoProfil.png")
+  role           Role      @default(user)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  lastConnection DateTime?
+
+  // Relations
+  posts                Post[]
+  likes                Like[]
+  commentaires         Commentaire[]
+  notifications        Notification[]       @relation("receiverNotification")
+  sentNotifications    Notification[]       @relation("senderNotification")
+  createdConversations Conversation[]       @relation("authorConversation")
+  conversations        UserToConversation[]
+  messages             Message[]
+}
+
+model Post {
+  id          String  @id @default(cuid())
+  description String
+  media       String?
+  authorId    String
+  author      User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Relations
+  likes        Like[]
+  commentaires Commentaire[]
+}
+
+model Like {
+  id     String  @id @default(cuid())
+  status Boolean @default(false)
+
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Commentaire {
+  id      String @id @default(cuid())
+  contenu String
+
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id           String           @id @default(cuid())
+  type         NotificationType
+  notifiableId String
+  createdAt    DateTime         @default(now())
+
+  // Qui reçoit la notification (l'auteur du post)
+  receiverId String
+  receiver   User   @relation("receiverNotification", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  // Qui a déclenché la notification (ex: celui qui a liké ou commenté)
+  senderId String
+  sender   User   @relation("senderNotification", fields: [senderId], references: [id], onDelete: Cascade)
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updtedAt  DateTime @updatedAt
+
+  authorId String
+  author   User   @relation("authorConversation", fields: [authorId], references: [id], onDelete: Cascade)
+
+  users    UserToConversation[]
+  messages Message[]
+}
+
+model UserToConversation {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  joinedAt  DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  senderId String
+  sender   User   @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 }

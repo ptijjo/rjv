@@ -1,5 +1,12 @@
 export interface User {
-    id?: number;
-    email: string;
-    password: string;
-  }
+  id: string;
+  email: string;
+  password?: string | null;
+  googleId?: string | null;
+  pseudo: string;
+  avatar: string;
+  role: string;
+  createdAt: Date;
+  updatedAt: Date;
+  lastConnection?: Date | null;
+}
