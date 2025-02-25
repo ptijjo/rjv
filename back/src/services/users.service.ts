@@ -4,6 +4,8 @@ import { Service } from 'typedi';
 import { CreateUserDto, UpdateUserDto } from '@dtos/users.dto';
 import { HttpException } from '@/exceptions/httpException';
 import { User } from '@interfaces/users.interface';
+import fs from 'fs/promises';
+import path from 'path';
 
 @Service()
 export class UserService {
@@ -56,6 +58,26 @@ export class UserService {
     // Hachage du mot de passe s'il est mis à jour
     if (userData.password) {
       updatedUserData.password = await hash(userData.password, 10);
+    }
+
+    if (userData.avatar && userData.avatar) {
+      try {
+        // Extraction du chemin après le port (ex: "/public/avatar/...")
+        const relativePath = new URL(findUser.avatar).pathname;
+
+        // Création du chemin absolu (assume que les fichiers sont stockés dans "/public" à la racine du projet)
+        const filePath = path.join(__dirname, '..', '..', relativePath);
+
+        await fs.access(filePath);
+
+        await fs.unlink(filePath);
+      } catch (err) {
+        if (err.code === 'ENOENT') {
+          throw new HttpException(409, `Fichier déjà supprimé ou introuvable : ${err.path}`);
+        } else {
+          throw new HttpException(409, `Erreur lors de la suppression de l'ancien avatar : ${err}`);
+        }
+      }
     }
 
     const updateUserData: User = await this.user.update({ where: { id: findUser.id }, data: { ...updatedUserData } });

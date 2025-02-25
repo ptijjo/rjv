@@ -13,6 +13,7 @@ import { Routes } from '@interfaces/routes.interface';
 import { ErrorMiddleware } from '@middlewares/error.middleware';
 import { logger, stream } from '@utils/logger';
 import http from 'http';
+import path from 'path';
 
 export class App {
   public app: express.Application;
@@ -53,6 +54,8 @@ export class App {
   }
 
   private initializeMiddlewares() {
+    this.app.set('trust proxy', 1);
+    this.app.use('/public', express.static(path.join(__dirname, '..', 'public')));
     this.app.use(morgan(LOG_FORMAT, { stream }));
     this.app.use(cors({ origin: ORIGIN, credentials: CREDENTIALS }));
     this.app.use(hpp());

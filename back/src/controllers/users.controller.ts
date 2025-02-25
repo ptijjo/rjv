@@ -42,6 +42,9 @@ export class UserController {
     try {
       const userId = String(req.params.id);
       const userData: User = req.body;
+
+      if (req.file) userData.avatar = `${req.protocol}://${req.get('host')}/public/avatar/${req.file.filename}`.split(' ').join('');
+
       const updateUserData: User = await this.user.updateUser(userId, userData);
 
       res.status(200).json({ data: updateUserData, message: 'updated' });

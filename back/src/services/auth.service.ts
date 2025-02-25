@@ -20,6 +20,15 @@ export class AuthService {
       const isPasswordMatching: boolean = await compare(userData.password, findEmail.password);
       if (!isPasswordMatching) throw new HttpException(409, `Identifiants incorrects !`);
 
+      await this.user.update({
+        where: {
+          id: findEmail.id,
+        },
+        data: {
+          lastConnection: new Date(),
+        },
+      });
+
       const payload = {
         id: findEmail.id,
         email: findEmail.email,
@@ -35,6 +44,15 @@ export class AuthService {
 
       const isPasswordMatching: boolean = await compare(userData.password, findPseudo.password);
       if (!isPasswordMatching) throw new HttpException(409, `Identifiants incorrects !`);
+
+      await this.user.update({
+        where: {
+          id: findPseudo.id,
+        },
+        data: {
+          lastConnection: new Date(),
+        },
+      });
 
       const payload = {
         id: findPseudo.id,
