@@ -65,11 +65,16 @@ model Like {
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId],name: "uniqueLike")  // Empêche les doublons // Clé unique sur userId + postId
 }
 
 model Commentaire {
   id      String @id @default(cuid())
   contenu String
+  
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   postId String
   post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)

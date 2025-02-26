@@ -27,15 +27,20 @@ export class UserService {
     const findUser: User | null = await this.user.findUnique({ where: { email: userData.email } });
     if (findUser) throw new HttpException(409, `This email ${userData.email} already exists`);
 
-    const existGoogleId: User | null = await this.user.findUnique({
-      where: { googleId: userData.googleId },
-    });
-
-    if (existGoogleId) throw new HttpException(409, `This email ${userData.email} already exists`);
-
     if (userData.password && !userData.googleId) {
       const hashedPassword = await hash(userData.password, 10);
       const createUserData: User = await this.user.create({ data: { ...userData, password: hashedPassword } });
+      return createUserData;
+    }
+
+    if (userData.googleId) {
+      const existGoogleId: User | null = await this.user.findUnique({
+        where: { googleId: userData.googleId },
+      });
+
+      if (existGoogleId) throw new HttpException(409, `This email ${userData.email} already exists`);
+
+      const createUserData: User = await this.user.create({ data: { ...userData } });
       return createUserData;
     }
     throw new HttpException(409, "Veuillez choisir un type d'inscription");

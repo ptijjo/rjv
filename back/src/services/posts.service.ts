@@ -29,7 +29,7 @@ export class PostService {
     const findPost: Post | null = await this.post.findUnique({ where: { id: userId } });
     if (!findPost) throw new HttpException(409, "Post doesn't exist");
 
-    const updatedUserData: any = { ...userData };
+    const updatedUserData = { ...userData };
 
     const updatePostData: Post = await this.post.update({ where: { id: findPost.id }, data: { ...updatedUserData } });
     return updatePostData;
