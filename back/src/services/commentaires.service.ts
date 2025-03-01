@@ -12,14 +12,14 @@ export class CommentaireService {
   public async findAllCommentaire(postId: string): Promise<Commentaire[]> {
     const allCommentaire: Commentaire[] = await this.commentaire.findMany({
       where: { postId: postId },
-      include: { user: true },
+      include: { user: true, post: true },
       orderBy: { createdAt: 'desc' },
     });
     return allCommentaire;
   }
 
   public async findCommentaireById(commentaireId: string): Promise<Commentaire> {
-    const findCommentaire: Commentaire = await this.commentaire.findUnique({ where: { id: commentaireId } });
+    const findCommentaire: Commentaire = await this.commentaire.findUnique({ where: { id: commentaireId }, include: { post: true } });
     if (!findCommentaire) throw new HttpException(409, "Commentaire doesn't exist");
 
     return findCommentaire;
@@ -29,7 +29,7 @@ export class CommentaireService {
     const postComment = await this.post.findUnique({ where: { id: postId } });
     if (!postComment) throw new HttpException(409, 'Post introuvable');
 
-    const create = await this.commentaire.create({ data: { ...commentaireData, postId: postComment.id, userId: userId } });
+    const create = await this.commentaire.create({ data: { ...commentaireData, postId: postComment.id, userId: userId }, include: { post: true } });
 
     return create;
   }
@@ -40,7 +40,7 @@ export class CommentaireService {
 
     if (comment.userId !== userId) throw new HttpException(409, 'Opération interdite');
 
-    const update = await this.commentaire.update({ where: { id: comment.id }, data: { contenu: commentaireData.contenu } });
+    const update = await this.commentaire.update({ where: { id: comment.id }, data: { contenu: commentaireData.contenu }, include: { post: true } });
 
     return update;
   }
@@ -51,7 +51,7 @@ export class CommentaireService {
 
     if (comment.userId !== user.id && user.role === 'user') throw new HttpException(409, 'Opération interdite');
 
-    const deleteCommentaire = await this.commentaire.delete({ where: { id: comment.id } });
+    const deleteCommentaire = await this.commentaire.delete({ where: { id: comment.id }, include: { post: true } });
     return deleteCommentaire;
   }
 }

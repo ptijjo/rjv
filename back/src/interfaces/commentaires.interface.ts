@@ -1,4 +1,5 @@
 export interface Commentaire {
+  post: any;
   id: string;
   contenu: string;
   postId: string;

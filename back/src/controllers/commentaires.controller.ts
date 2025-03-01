@@ -3,9 +3,14 @@ import { Container } from 'typedi';
 import { Commentaire } from '@interfaces/commentaires.interface';
 import { CommentaireService } from '../services/commentaires.service';
 import { CreateCommentaireDto, UpdateCommentaireDto } from '@/dtos/commentaires.dto';
+import { NotificationType } from '@prisma/client';
+import { HttpException } from '@/exceptions/httpException';
+import { Notification } from '@/interfaces/notification.interface';
+import { NotificationService } from '@/services/notification.service';
 
 export class CommentaireController {
   public commentaire = Container.get(CommentaireService);
+  public notification = Container.get(NotificationService);
 
   public getCommentaires = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -34,9 +39,23 @@ export class CommentaireController {
       const commentaireData: CreateCommentaireDto = req.body;
       const postId = req.body.postId;
       const userId = req.user.id as string;
+
       const createCommentaireData: Commentaire = await this.commentaire.createCommentaire(commentaireData, postId, userId);
 
-      res.status(201).json({ data: createCommentaireData, message: 'created' });
+      const receiverId = createCommentaireData?.post?.authorId; // Il est important de vérifier que post existe
+
+      if (!receiverId) {
+        throw new HttpException(409, 'AuthorId not found');
+      }
+
+      const notificationData = {
+        type: NotificationType.commentaire,
+        notifiableId: createCommentaireData.id as string,
+      };
+
+      const notification: Notification = await this.notification.createNotification(userId, receiverId, notificationData);
+
+      res.status(201).json({ data: { createCommentaireData, notification }, message: 'created' });
     } catch (error) {
       next(error);
     }

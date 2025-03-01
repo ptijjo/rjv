@@ -86,7 +86,8 @@ model Commentaire {
 model Notification {
   id           String           @id @default(cuid())
   type         NotificationType
-  notifiableId String
+  notifiableId String // pour avoir id du post liké ou du commentaire ajouté
+  read Boolean @default(false)
   createdAt    DateTime         @default(now())
 
   // Qui reçoit la notification (l'auteur du post)

@@ -15,6 +15,9 @@ export class LikeService {
 
     const existLike: Like | null = await this.like.findUnique({
       where: { uniqueLike: { userId, postId } },
+      include: {
+        post: true,
+      },
     });
 
     if (existLike) {
@@ -22,6 +25,9 @@ export class LikeService {
         where: { id: existLike.id },
         data: {
           status: !existLike.status,
+        },
+        include: {
+          post: true,
         },
       });
 
@@ -33,6 +39,9 @@ export class LikeService {
         userId: userId,
         postId: findPost.id,
         status: true,
+      },
+      include: {
+        post: true,
       },
     });
     return like;

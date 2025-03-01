@@ -82,7 +82,7 @@ export class App {
     });
   }
 
-  public getScketInstance() {
+  public getSocketInstance() {
     return this.io;
   }
 

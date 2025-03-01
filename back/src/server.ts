@@ -12,4 +12,4 @@ const app = new App([new UserRoute(), new AuthRoute(), new PostRoute(), new Like
 
 app.listen();
 
-export const socketInstance = app.getScketInstance();
+export const socketInstance = app.getSocketInstance();
