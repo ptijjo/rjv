@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { compare } from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 import { Service } from 'typedi';
-import { HttpException } from '@/exceptions/httpException';
+import { HttpException } from '@/exceptions/HttpException';
 import { User } from '@interfaces/users.interface';
 import { AuthInterface } from '@/interfaces/auth.interface';
 import { EXPIRED_TOKEN, SECRET_KEY } from '@/config';

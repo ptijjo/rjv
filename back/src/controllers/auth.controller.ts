@@ -18,6 +18,7 @@ export class AuthController {
         maxAge: 3600 * 1000, // 1h
         sameSite: 'strict',
       });
+
       res.status(200).json('connection réussie');
     } catch (error) {
       next(error);
